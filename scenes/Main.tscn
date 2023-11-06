@@ -66,7 +66,15 @@ __meta__ = {
 "_edit_lock_": true
 }
 
-[node name="Player" parent="Actor" instance=ExtResource( 3 )]
+[node name="Enemies" type="Control" parent="Actor"]
+margin_right = 40.0
+margin_bottom = 40.0
+
+[node name="Players" type="Control" parent="Actor"]
+margin_right = 40.0
+margin_bottom = 40.0
+
+[node name="Player" parent="Actor/Players" instance=ExtResource( 3 )]
 position = Vector2( 24, 24 )
 
 [node name="Debug" type="Control" parent="."]
