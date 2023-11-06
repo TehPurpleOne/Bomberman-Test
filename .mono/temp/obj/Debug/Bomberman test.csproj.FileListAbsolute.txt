@@ -7,3 +7,12 @@ C:\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.AssemblyInf
 C:\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.csproj.CoreCompileInputs.cache
 C:\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.dll
 C:\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.pdb
+C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\bin\Debug\Bomberman test.dll
+C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\bin\Debug\Bomberman test.pdb
+C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.csproj.AssemblyReference.cache
+C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.AssemblyInfoInputs.cache
+C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.AssemblyInfo.cs
+C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.csproj.CoreCompileInputs.cache
+C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.dll
+C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.pdb

@@ -1,11 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "6YmARqWZ5OENJRU+G2erd7nenGVaSGjL8nmm1LkMmVQlmJLnMXmnCiw6vYfocep7y7AQ5H48L0RaGgMp4x3sDg==",
+  "dgSpecHash": "A4xNMVqKVStwgGQnmi7MoWN9uayFS8E7JedlmazAs0fZW631zXXtKD11TjDRcAlCdPsMLxss+LEGIjdRPdn33A==",
   "success": true,
-  "projectFilePath": "C:\\stuff\\projects\\Bomberman-Test\\Bomberman test.csproj",
-  "expectedPackageFiles": [
-    "C:\\Users\\User\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.3\\microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
-    "C:\\Users\\User\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net472\\1.0.3\\microsoft.netframework.referenceassemblies.net472.1.0.3.nupkg.sha512"
-  ],
+  "projectFilePath": "C:\\Users\\GALC\\Documents\\stuff\\projects\\Bomberman-Test\\Bomberman test.csproj",
+  "expectedPackageFiles": [],
   "logs": []
 }

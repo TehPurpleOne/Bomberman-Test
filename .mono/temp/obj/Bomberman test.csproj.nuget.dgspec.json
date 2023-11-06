@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\stuff\\projects\\Bomberman-Test\\Bomberman test.csproj": {}
+    "C:\\Users\\GALC\\Documents\\stuff\\projects\\Bomberman-Test\\Bomberman test.csproj": {}
   },
   "projects": {
-    "C:\\stuff\\projects\\Bomberman-Test\\Bomberman test.csproj": {
+    "C:\\Users\\GALC\\Documents\\stuff\\projects\\Bomberman-Test\\Bomberman test.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\stuff\\projects\\Bomberman-Test\\Bomberman test.csproj",
+        "projectUniqueName": "C:\\Users\\GALC\\Documents\\stuff\\projects\\Bomberman-Test\\Bomberman test.csproj",
         "projectName": "Bomberman test",
-        "projectPath": "C:\\stuff\\projects\\Bomberman-Test\\Bomberman test.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\stuff\\projects\\Bomberman-Test\\.mono\\temp\\obj\\",
+        "projectPath": "C:\\Users\\GALC\\Documents\\stuff\\projects\\Bomberman-Test\\Bomberman test.csproj",
+        "packagesPath": "C:\\Users\\GALC\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\GALC\\Documents\\stuff\\projects\\Bomberman-Test\\.mono\\temp\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\GALC\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net472"
@@ -37,15 +37,7 @@
       "frameworks": {
         "net472": {
           "targetAlias": "net472",
-          "dependencies": {
-            "Microsoft.NETFramework.ReferenceAssemblies": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[1.0.3, )",
-              "autoReferenced": true
-            }
-          },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.302\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.302\\RuntimeIdentifierGraph.json"
         }
       }
     }

@@ -7,6 +7,7 @@ public class Main : Node2D
     private TileMap background;
     private TileMap breakables;
     private TileMap items;
+    private Player p;
 
     private Dictionary<Vector2, int> activeBreakables = new Dictionary<Vector2, int>();
     private Dictionary<Vector2, int> activeItems = new Dictionary<Vector2, int>();
@@ -16,9 +17,10 @@ public class Main : Node2D
     public states previousState = states.NULL;
 
     public override void _Ready() {
+        p = (Player)GetNode("Actor/Player");
         background = (TileMap)GetNode("Background/BackgroundMap");
-        breakables = (TileMap)GetNode("Item/ItemMap");
-        items = (TileMap)GetNode("Breakable/BreakableMap");
+        breakables = (TileMap)GetNode("Breakable/BreakableMap");
+        items = (TileMap)GetNode("Item/ItemMap");
 
         setState(states.INIT);
     }
@@ -47,15 +49,23 @@ public class Main : Node2D
                 // The first thing we want to do is populate the map with the destrucable blocks.
                 Random RNGesus = new Random();
 
-                for(int i = 0; i < background.GetUsedCells().Count; i++) {
+                // Get the player's starting position and the distance of the new tile from the player.
+                Vector2 playerStartPos = new Vector2((float)Math.Floor(p.GlobalPosition.x / background.CellSize.x), (float)Math.Floor(p.GlobalPosition.y / background.CellSize.y));
+
+                for(int i = 0; i < background.GetUsedCells().Count; i++) { // Start the block population loop.
                     // Get the current game world's map. All tiles should be used to function properly.
                     Vector2 tilePos = (Vector2)background.GetUsedCells()[i];
                     int tileID = (int)background.GetCellv(tilePos);
 
-                    // Next, we going to place breakable blocks at random locations, but...
+                    // Next, we going to place breakable blocks at random locations since this is an example, but...
                     bool setBlock = Convert.ToBoolean(RNGesus.Next(0, 2));
 
-                    GD.Print(tilePos,", ",setBlock);
+                    // We need to ignore player starting positions, and any blocks that are not walkable.
+                    float dist = tilePos.DistanceTo(playerStartPos);
+
+                    if(tileID != 0 && tileID != 1 && setBlock && dist > 1) { // Everything checks out. Drop a block.
+                        breakables.SetCellv(tilePos, 0);
+                    }
                 }
                 break;
         }
