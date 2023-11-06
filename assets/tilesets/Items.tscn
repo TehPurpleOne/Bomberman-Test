@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://assets/sprites/items.png" type="Texture" id=1]
+
+[node name="Items" type="Node2D"]
+
+[node name="00" type="Sprite" parent="."]
+texture = ExtResource( 1 )
+hframes = 3
+
+[node name="01" type="Sprite" parent="."]
+texture = ExtResource( 1 )
+hframes = 3
+frame = 1
+
+[node name="02" type="Sprite" parent="."]
+texture = ExtResource( 1 )
+hframes = 3
+frame = 2

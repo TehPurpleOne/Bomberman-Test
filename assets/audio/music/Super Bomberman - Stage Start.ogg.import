@@ -1,0 +1,15 @@
+[remap]
+
+importer="ogg_vorbis"
+type="AudioStreamOGGVorbis"
+path="res://.import/Super Bomberman - Stage Start.ogg-45339288c24fac55b26e4258226cafbb.oggstr"
+
+[deps]
+
+source_file="res://assets/audio/music/Super Bomberman - Stage Start.ogg"
+dest_files=[ "res://.import/Super Bomberman - Stage Start.ogg-45339288c24fac55b26e4258226cafbb.oggstr" ]
+
+[params]
+
+loop=true
+loop_offset=0
