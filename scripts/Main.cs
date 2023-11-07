@@ -80,7 +80,7 @@ public class Main : Node2D
             case states.CLEAR:
                 if(activeSong.GetPlaybackPosition() >= 3.0f && !introDone) { // Create a second Tween to move the text offscreen.
                     SceneTreeTween tween = CreateTween();
-                    Label stageClear = (Label)GetNode("UI/stageClear");
+                    Label stageClear = (Label)GetNode("UI/StageClear");
                     tween.TweenProperty(stageClear, "rect_position", new Vector2(-192, 104), 0.5f);
                     tween.SetTrans(Tween.TransitionType.Linear);
                     tween.SetEase(Tween.EaseType.In);
