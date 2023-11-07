@@ -9,7 +9,7 @@ public class Player : KinematicBody2D {
     private Vector2 velocity;
     [Export] private float speed = 60;
 
-    public enum states {NULL, INIT, IDLE, WALK, DEAD};
+    public enum states {NULL, INIT, IDLE, WALK, DEAD, CLEAR};
     public states state = states.NULL;
     public states previousState = states.NULL;
 
@@ -93,6 +93,10 @@ public class Player : KinematicBody2D {
                 break;
         }
 
+        if(w.state == Main.states.CLEAR && state != states.CLEAR) {
+            return states.CLEAR;
+        }
+
         return states.NULL;
     }
 
@@ -126,6 +130,10 @@ public class Player : KinematicBody2D {
             case states.DEAD:
                 animState = "DEAD";
                 break;
+            
+            case states.CLEAR:
+                animState = "CLEAR";
+                break;
         }
 
         switch(w.getDirection()) {
@@ -146,7 +154,8 @@ public class Player : KinematicBody2D {
                 break;
         }
 
-        if(animState == "DEAD") {
+        if(animState == "DEAD" || animState == "CLEAR") {
+            Show();
             animDir = "";
         }
 
@@ -154,6 +163,20 @@ public class Player : KinematicBody2D {
 
         if(anim.HasAnimation(animCheck) && animCheck != anim.CurrentAnimation) {
             anim.Play(animCheck);
+        }
+    }
+
+    private void onHitBoxBodyEntered(Node body) {
+        // No health bars to save Bomberman here. Instant death for him!
+        setState(states.DEAD);
+    }
+
+    private void onAnimDone(string which) {
+        switch(which) {
+            case "DEAD":
+                // Restart the current stage after a death.
+                w.restartStage(0);
+                break;
         }
     }
 }

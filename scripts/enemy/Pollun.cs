@@ -7,11 +7,6 @@ public class Pollun : Enemy {
         w = (Main)GetTree().GetNodesInGroup("world")[0];
         anim = (AnimationPlayer)GetNode("AnimationPlayer");
 
-        availableDirections.Add(Vector2.Up);
-        availableDirections.Add(Vector2.Down);
-        availableDirections.Add(Vector2.Left);
-        availableDirections.Add(Vector2.Right);
-
         setState(states.INIT);
     }
 
@@ -28,6 +23,7 @@ public class Pollun : Enemy {
     private void stateLogic(float delta) {
         switch(state) {
             case states.MOVE:
+                // Move Pollun.
                 velocity = MoveAndSlide(velocity, Vector2.Zero);
                 break;
         }
@@ -42,8 +38,23 @@ public class Pollun : Enemy {
                 break;
             
             case states.CHOOSE:
-                if(targetPos != Vector2.Zero) {
+                if(targetPos != GlobalPosition) {
                     return states.MOVE;
+                }
+                return states.CHOOSE;
+            
+            case states.MOVE:
+                if(targetPos.DistanceTo(GlobalPosition) < 1) {
+                    return states.CHOOSE;
+                }
+                break;
+        }
+
+        switch(state) {
+            case states.CHOOSE:
+            case states.MOVE:
+                if(hit) {
+                    return states.HIT;
                 }
                 break;
         }
@@ -58,33 +69,79 @@ public class Pollun : Enemy {
                 break;
             
             case states.CHOOSE:
-                while(targetPos == Vector2.Zero) {
-                    Random RNGesus = new Random();
+                Random RNGesus = new Random();
 
-                    Vector2 direction = availableDirections[RNGesus.Next(0, 4)];
+                // Target position should never be 0;
+                if(targetPos == Vector2.Zero) {
+                    targetPos = GlobalPosition;
+                }
 
-                    Vector2 newTarget = w.background.WorldToMap(GlobalPosition) + direction;
+                // Center the Pollun in the current tile.
+                if(GlobalPosition != targetPos && targetPos != Vector2.Zero) {
+                    GlobalPosition = targetPos;
+                }
 
-                    GD.Print(Name," at position ",w.background.WorldToMap(GlobalPosition)," is trying to move to ",newTarget);
+                // Add the 4 cardinal directions to the list.
+                availableDirections.Add(Vector2.Up);
+                availableDirections.Add(Vector2.Down);
+                availableDirections.Add(Vector2.Left);
+                availableDirections.Add(Vector2.Right);
 
-                    /* bool openSpace = w.backgroundTiles[newTarget] == 2 || !w.activeBreakables.ContainsKey(newTarget);
+                // Next, eliminate invalid directions.
+                Vector2 previousDir = velocity.Normalized();
+                Vector2 tilePos = Vector2.Zero;
 
-                    switch(openSpace) {
-                        case true:
-                            GD.Print("Location is valid!");
-                            targetPos = newTarget;
-                            velocity = direction * speed;
+                // First, we need to see if Pollun wants to continue on his current path, if one was chosen.
+                int behaviorA = RNGesus.Next(0, 256);
+
+                if(behaviorA >= 32) { // Try to stay the course.
+                    tilePos = w.background.WorldToMap(GlobalPosition) + previousDir;
+
+                    if(w.background.GetCellv(tilePos) == 2 && !w.activeBreakables.ContainsKey(tilePos) && !w.activeBombs.ContainsKey(tilePos) && previousDir != Vector2.Zero) {
+                        // Staying the course was successful!
+                        targetPos = GlobalPosition + (previousDir * w.background.CellSize);
+                        velocity = previousDir * speed;
+                    }
+
+                    if(w.background.GetCellv(tilePos) != 2 || w.activeBreakables.ContainsKey(tilePos) || w.activeBombs.ContainsKey(tilePos) || previousDir == Vector2.Zero) {
+                        // Whoops. Can't go that way anymore. Let's adjust behaviorA.
+                        behaviorA = 0;
+                    }
+                }
+
+                if(behaviorA < 32) { // Choose a new direction.
+                    int behaviorB = RNGesus.Next(0, 4);
+
+                    for(int i = 0; i < availableDirections.Count; i++) {
+                        Vector2 desiredDir = availableDirections[behaviorB];
+
+                        tilePos = w.background.WorldToMap(GlobalPosition) + desiredDir;
+
+                        if(w.background.GetCellv(tilePos) == 2 && !w.activeBreakables.ContainsKey(tilePos) && !w.activeBombs.ContainsKey(tilePos)) {
+                            // Pollun can move in the desired direction!
+                            targetPos = GlobalPosition + (desiredDir * w.background.CellSize);
+                            velocity = desiredDir * speed;
                             break;
-                        
-                        case false:
-                            GD.Print("Location is NOT valid...");
-                            break;
-                    } */
+                        }
+
+                        if(w.background.GetCellv(tilePos) != 2 || w.activeBreakables.ContainsKey(tilePos) || w.activeBombs.ContainsKey(tilePos)) {
+                            // That direction is blocked. Let's try another.
+                            behaviorB++;
+                            behaviorB = Mathf.Wrap(behaviorB, 0, 4);
+                        }
+                    }
                 }
                 break;
             
-            case states.MOVE:
-                
+            case states.HIT:
+                anim.Play("HIT");
+                //Prevent Pollun from killing Bomberman if he is already dead.
+                CollisionShape2D obstacleBox = (CollisionShape2D)GetNode("CollisionShape2D");
+                obstacleBox.Disabled = true;
+                break;
+
+            case states.DEAD:
+                anim.Play("DEAD");
                 break;
         }
     }
@@ -94,12 +151,26 @@ public class Pollun : Enemy {
     }
 
     private void setState(states newState) {
-        GD.Print(Name,", ",newState);
+        hit = false;
         previousState = state;
         state = newState;
 
         exitState(previousState, newState);
 
         enterState(newState, previousState);
+    }
+
+    private void onAnimDone(string which) {
+        // Since different enemies have different animations to worry about, checking for animation completion isn't up to the base script.
+        switch(which) {
+            case "HIT":
+                setState(states.DEAD);
+                break;
+            
+            case "DEAD":
+                w.activeEnemies.Remove(this);
+                QueueFree();
+                break;
+        }
     }
 }

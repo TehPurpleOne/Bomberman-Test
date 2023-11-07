@@ -8,14 +8,18 @@ public class Enemy : KinematicBody2D
     public AnimationPlayer anim;
 
     public Vector2 velocity;
-    [Export] public float speed = 60;
+    [Export] public float speed = 40; // This is exported so it can be adjusted from the enemy's scene.
 
     public Vector2 targetPos = Vector2.Zero;
     public List<Vector2> availableDirections = new List<Vector2>();
 
-    public enum states {NULL, INIT, CHOOSE, MOVE, HIT, DEAD};
+    public bool hit = false;
+
+    public enum states {NULL, INIT, CHOOSE, MOVE, HIT, DEAD}; // Add states as necessary for the enemies in your game.
     public states state = states.NULL;
     public states previousState = states.NULL;
+
+    // Below is a collection of functions that all enemies can share. See Pollun for an example.
 
     /* public override void _Ready() {
         w = (Main)GetTree().GetNodesInGroup("world")[0];
@@ -59,4 +63,10 @@ public class Enemy : KinematicBody2D
 
         enterState(newState, previousState);
     } */
+
+    public void onHitboxBodyEntered(Node body) {
+        // Be sure to adjust vulnerability in the enemy's individual scripts!
+        // Enemy got bombed! Kill it!
+        hit = true;
+    }
 }

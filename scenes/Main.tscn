@@ -12,13 +12,9 @@
 [ext_resource path="res://assets/audio/sfx/Item Get.wav" type="AudioStream" id=10]
 [ext_resource path="res://assets/audio/music/Super Bomberman - Stage Start.ogg" type="AudioStream" id=11]
 [ext_resource path="res://assets/audio/music/Super Bomberman - World 1.ogg" type="AudioStream" id=12]
+[ext_resource path="res://assets/audio/music/Super Bomberman - Triumph Fanfare.ogg" type="AudioStream" id=13]
 
 [sub_resource type="DynamicFont" id=2]
-font_data = ExtResource( 2 )
-
-[sub_resource type="DynamicFont" id=1]
-size = 8
-extra_spacing_bottom = -3
 font_data = ExtResource( 2 )
 
 [node name="Main" type="Node2D" groups=["world"]]
@@ -79,16 +75,22 @@ __meta__ = {
 "_edit_lock_": true
 }
 
+[node name="Enemies" type="Control" parent="Actor"]
+margin_right = 320.0
+margin_bottom = 240.0
+__meta__ = {
+"_edit_lock_": true
+}
+
 [node name="Players" type="Control" parent="Actor"]
-margin_right = 40.0
-margin_bottom = 40.0
+margin_right = 320.0
+margin_bottom = 240.0
+__meta__ = {
+"_edit_lock_": true
+}
 
 [node name="Player" parent="Actor/Players" instance=ExtResource( 3 )]
 position = Vector2( 24, 24 )
-
-[node name="Enemies" type="Control" parent="Actor"]
-margin_right = 40.0
-margin_bottom = 40.0
 
 [node name="UI" type="Control" parent="."]
 margin_right = 320.0
@@ -108,24 +110,16 @@ custom_constants/shadow_offset_y = 2
 custom_fonts/font = SubResource( 2 )
 text = "STAGE START!"
 
-[node name="Debug" type="Control" parent="."]
-visible = false
-margin_right = 320.0
-margin_bottom = 240.0
-__meta__ = {
-"_edit_lock_": true
-}
-
-[node name="Text" type="Label" parent="Debug"]
-margin_right = 80.0
-margin_bottom = 32.0
+[node name="StageClear" type="Label" parent="UI"]
+margin_left = 320.0
+margin_top = 104.0
+margin_right = 512.0
+margin_bottom = 120.0
 custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
-custom_fonts/font = SubResource( 1 )
-text = "GRID POS:
-GLBL POS:
-BOMB STR:
-MAX BOMBS:"
-align = 2
+custom_constants/shadow_offset_x = 2
+custom_constants/shadow_offset_y = 2
+custom_fonts/font = SubResource( 2 )
+text = "STAGE CLEAR!"
 
 [node name="AudioManager" type="Node" parent="."]
 
@@ -150,3 +144,6 @@ stream = ExtResource( 11 )
 
 [node name="Stage" type="AudioStreamPlayer" parent="AudioManager/Music"]
 stream = ExtResource( 12 )
+
+[node name="Clear" type="AudioStreamPlayer" parent="AudioManager/Music"]
+stream = ExtResource( 13 )

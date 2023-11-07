@@ -4,7 +4,7 @@
 [ext_resource path="res://scripts/enemy/Pollun.cs" type="Script" id=2]
 
 [sub_resource type="RectangleShape2D" id=1]
-extents = Vector2( 7, 7 )
+extents = Vector2( 6, 6 )
 
 [sub_resource type="Animation" id=2]
 resource_name = "DEAD"
@@ -55,17 +55,28 @@ tracks/0/keys = {
 }
 
 [node name="Pollun" type="KinematicBody2D" groups=["enemy"]]
+collision_layer = 16
+collision_mask = 4
 script = ExtResource( 2 )
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource( 1 )
 
+[node name="Area2D" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 32
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource( 1 )
+
 [node name="Sprite" type="Sprite" parent="."]
 texture = ExtResource( 1 )
 hframes = 11
-frame = 5
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 anims/DEAD = SubResource( 2 )
 anims/HIT = SubResource( 3 )
 anims/MOVE = SubResource( 4 )
+
+[connection signal="body_entered" from="Area2D" to="." method="onHitboxBodyEntered"]
+[connection signal="animation_finished" from="AnimationPlayer" to="." method="onAnimDone"]

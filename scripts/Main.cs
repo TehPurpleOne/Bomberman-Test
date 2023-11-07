@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 
 public class Main : Node2D
@@ -14,9 +15,9 @@ public class Main : Node2D
     public Dictionary<Vector2, int> backgroundTiles = new Dictionary<Vector2, int>();
     public Dictionary<Vector2, int> activeBreakables = new Dictionary<Vector2, int>();
     private Dictionary<Vector2, int> activeItems = new Dictionary<Vector2, int>();
-    private Dictionary<Vector2, Bomb> activeBombs = new Dictionary<Vector2, Bomb>();
+    public Dictionary<Vector2, Bomb> activeBombs = new Dictionary<Vector2, Bomb>();
     public Dictionary<Vector2, Explosion> activeExplosions = new Dictionary<Vector2, Explosion>();
-    private List<Enemy> activeEnemies = new List<Enemy>();
+    public List<Enemy> activeEnemies = new List<Enemy>();
 
     private AudioStreamPlayer activeSong;
     
@@ -24,7 +25,7 @@ public class Main : Node2D
     private Vector2 lastTilePos = Vector2.Zero;
     private Vector2 currentTilePos = Vector2.Zero;
 
-    public enum states {NULL, INIT, START, RUN};
+    public enum states {NULL, INIT, START, RUN, CLEAR};
     public states state = states.NULL;
     public states previousState = states.NULL;
 
@@ -75,6 +76,21 @@ public class Main : Node2D
                     checkforItems(currentTilePos);
                 }
                 break;
+            
+            case states.CLEAR:
+                if(activeSong.GetPlaybackPosition() >= 3.0f && !introDone) { // Create a second Tween to move the text offscreen.
+                    SceneTreeTween tween = CreateTween();
+                    Label stageClear = (Label)GetNode("UI/stageClear");
+                    tween.TweenProperty(stageClear, "rect_position", new Vector2(-192, 104), 0.5f);
+                    tween.SetTrans(Tween.TransitionType.Linear);
+                    tween.SetEase(Tween.EaseType.In);
+                    introDone = true;
+                }
+
+                if(!activeSong.Playing) {
+                    restartStage(1);
+                }
+                break;
         }
     }
 
@@ -86,6 +102,12 @@ public class Main : Node2D
             case states.START:
                 if(!activeSong.Playing) {
                     return states.RUN;
+                }
+                break;
+            
+            case states.RUN:
+                if(activeEnemies.Count == 0) {
+                    return states.CLEAR;
                 }
                 break;
         }
@@ -196,6 +218,16 @@ public class Main : Node2D
             case states.RUN:
                 playMusic("Stage"); // Play the stage music.
                 break;
+            
+            case states.CLEAR:
+                playMusic("Clear"); // Play the intro music.
+
+                SceneTreeTween clearTween = CreateTween(); // Create a Tween to display the Stage Start text.
+                Label stageClear = (Label)GetNode("UI/StageClear");
+                clearTween.TweenProperty(stageClear, "rect_position", new Vector2(64, 104), 0.5f);
+                clearTween.SetTrans(Tween.TransitionType.Linear);
+                clearTween.SetEase(Tween.EaseType.In);
+                break;
         }
     }
 
@@ -204,8 +236,7 @@ public class Main : Node2D
     }
 
     private void setState(states newState) {
-        GD.Print("Game World has moved into state: ",newState);
-
+        introDone = false;
         previousState = state;
         state = newState;
 
@@ -216,7 +247,10 @@ public class Main : Node2D
 
     private void playMusic(string name) {
         // Kill any current song that's playing. This is to prevent multiple songs from overlapping over one another.
-        activeSong = null;
+        if(activeSong != null) {
+            activeSong.Stop();
+            activeSong = null;
+        }
 
         Node songs = (Node)GetNode("AudioManager/Music");
 
@@ -279,7 +313,6 @@ public class Main : Node2D
 
             result.tilePos = playerTilePos;
             activeBombs.Add(playerTilePos, result);
-            GD.Print(result.Name," has been dropped.");
         }
     }
 
@@ -311,120 +344,100 @@ public class Main : Node2D
 
             switch(nStop) {
                 case bool v when v = !nStop && backgroundTiles.ContainsKey(nCheck) && backgroundTiles[nCheck] != 2:
-                    GD.Print("Background detected at ",nCheck," (NORTH)");
                     nStop = true;
                     break;
                 
                 case bool v when v = !nStop && activeBreakables.ContainsKey(nCheck):
-                    GD.Print("(",whichBomb.Name,") Breakable block detected at ",nCheck," (NORTH)");
                     destroyBlock(nCheck);
                     nStop = true;
                     break;
                 
                 case bool v when v = !nStop && activeItems.ContainsKey(nCheck):
-                    GD.Print("(",whichBomb.Name,")Item detected at ",nCheck," (NORTH)");
                     spawnItemBoom(nCheck);
                     nStop = true;
                     break;
 
                 case bool v when v = !nStop && activeBombs.ContainsKey(nCheck):
-                    GD.Print("(",whichBomb.Name,")Bomb detected at ",nCheck," (NORTH)");
                     activeBombs[nCheck].bombLife = 1;
                     nStop = true;
                     break;
                 
                 case bool v when v = !nStop && activeExplosions.ContainsKey(nCheck):
-                    GD.Print("(",whichBomb.Name,")Active explosion object detected at ",nCheck," (NORTH)");
                     nStop = true;
                     break;
             }
 
             switch(sStop) {
                 case bool v when v = !sStop && backgroundTiles.ContainsKey(sCheck) && backgroundTiles[sCheck] != 2:
-                    GD.Print("(",whichBomb.Name,")Background detected at ",sCheck," (SOUTH)");
                     sStop = true;
                     break;
                 
                 case bool v when v = !sStop && activeBreakables.ContainsKey(sCheck):
-                    GD.Print("(",whichBomb.Name,")Breakable block detected at ",sCheck," (SOUTH)");
                     destroyBlock(sCheck);
                     sStop = true;
                     break;
                 
                 case bool v when v = !sStop && activeItems.ContainsKey(sCheck):
-                    GD.Print("(",whichBomb.Name,")Item detected at ",sCheck," (SOUTH)");
                     spawnItemBoom(sCheck);
                     sStop = true;
                     break;
 
                 case bool v when v = !sStop && activeBombs.ContainsKey(sCheck):
-                    GD.Print("(",whichBomb.Name,")Bomb detected at ",sCheck," (SOUTH)");
                     activeBombs[sCheck].bombLife = 1;
                     sStop = true;
                     break;
                 
                 case bool v when v = !nStop && activeExplosions.ContainsKey(sCheck):
-                    GD.Print("(",whichBomb.Name,")Active explosion object detected at ",sCheck," (SOUTH)");
                     sStop = true;
                     break;
             }
 
             switch(wStop) {
                 case bool v when v = !wStop && backgroundTiles.ContainsKey(wCheck) && backgroundTiles[wCheck] != 2:
-                    GD.Print("(",whichBomb.Name,")Background detected at ",wCheck," (WEST)");
                     wStop = true;
                     break;
                 
                 case bool v when v = !wStop && activeBreakables.ContainsKey(wCheck):
-                    GD.Print("(",whichBomb.Name,")Breakable block detected at ",wCheck," (WEST)");
                     destroyBlock(wCheck);
                     wStop = true;
                     break;
                 
                 case bool v when v = !wStop && activeItems.ContainsKey(wCheck):
-                    GD.Print("(",whichBomb.Name,")Item detected at ",wCheck," (WEST)");
                     spawnItemBoom(wCheck);
                     wStop = true;
                     break;
 
                 case bool v when v = !wStop && activeBombs.ContainsKey(wCheck):
-                    GD.Print("(",whichBomb.Name,")Bomb detected at ",wCheck," (WEST)");
                     activeBombs[wCheck].bombLife = 1;
                     wStop = true;
                     break;
                 
                 case bool v when v = !wStop && activeExplosions.ContainsKey(wCheck):
-                    GD.Print("(",whichBomb.Name,")Active explosion object detected at ",wCheck," (WEST)");
                     wStop = true;
                     break;
             }
 
             switch(eStop) {
                 case bool v when v = !eStop && backgroundTiles.ContainsKey(eCheck) && backgroundTiles[eCheck] != 2:
-                    GD.Print("(",whichBomb.Name,")Background detected at ",eCheck," (EAST)");
                     eStop = true;
                     break;
                 
                 case bool v when v = !eStop && activeBreakables.ContainsKey(eCheck):
-                    GD.Print("(",whichBomb.Name,")Breakable block detected at ",eCheck," (EAST)");
                     destroyBlock(eCheck);
                     eStop = true;
                     break;
                 
                 case bool v when v = !eStop && activeItems.ContainsKey(eCheck):
-                    GD.Print("(",whichBomb.Name,")Item detected at ",eCheck," (EAST)");
                     spawnItemBoom(eCheck);
                     eStop = true;
                     break;
 
                 case bool v when v = !eStop && activeBombs.ContainsKey(eCheck):
-                    GD.Print("(",whichBomb.Name,")Bomb detected at ",eCheck," (EAST)");
                     activeBombs[eCheck].bombLife = 1;
                     eStop = true;
                     break;
                 
                 case bool v when v = !eStop && activeExplosions.ContainsKey(eCheck):
-                    GD.Print("(",whichBomb.Name,")Active explosion object detected at ",eCheck," (EAST)");
                     eStop = true;
                     break;
             }
@@ -553,6 +566,21 @@ public class Main : Node2D
             items.SetCellv(pos, -1);
             activeItems.Remove(pos);
         }
+    }
+
+    public void disableHitboxes() {
+        Area2D heroBox = (Area2D)p.GetNode("Area2D");
+        heroBox.Monitoring = false;
+
+        for(int i = 0; i < activeEnemies.Count; i++) {
+            Area2D badBox = (Area2D)activeEnemies[i].GetNode("Area2D");
+            badBox.Monitoring = false;
+        }
+    }
+
+    public void restartStage(int x) {
+        g.levelID += x; // Add x to levelID to increment or decrement level ID.
+        GetTree().ReloadCurrentScene();
     }
 }
 
