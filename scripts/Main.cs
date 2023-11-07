@@ -1,18 +1,28 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class Main : Node2D
 {
     private Global g;
-    private TileMap background;
+    public TileMap background;
     private TileMap breakables;
     private TileMap items;
     private Player p;
 
-    private List<Vector2> activeBreakables = new List<Vector2>();
+    public Dictionary<Vector2, int> backgroundTiles = new Dictionary<Vector2, int>();
+    public Dictionary<Vector2, int> activeBreakables = new Dictionary<Vector2, int>();
     private Dictionary<Vector2, int> activeItems = new Dictionary<Vector2, int>();
+    private Dictionary<Vector2, Bomb> activeBombs = new Dictionary<Vector2, Bomb>();
+    public Dictionary<Vector2, Explosion> activeExplosions = new Dictionary<Vector2, Explosion>();
     private List<Enemy> activeEnemies = new List<Enemy>();
+
+    private AudioStreamPlayer activeSong;
+    
+    private bool introDone = false;
+    private Vector2 lastTilePos = Vector2.Zero;
+    private Vector2 currentTilePos = Vector2.Zero;
 
     public enum states {NULL, INIT, START, RUN};
     public states state = states.NULL;
@@ -24,6 +34,14 @@ public class Main : Node2D
         background = (TileMap)GetNode("Background/BackgroundMap");
         breakables = (TileMap)GetNode("Breakable/BreakableMap");
         items = (TileMap)GetNode("Item/ItemMap");
+
+        // Populate backgroundTiles. This is done here due to the background not changing during gameplay.
+        for(int i = 0; i < background.GetUsedCells().Count; i++) {
+            Vector2 tilePos = (Vector2)background.GetUsedCells()[i];
+            int tileID = (int)background.GetCellv(tilePos);
+
+            backgroundTiles.Add(tilePos, tileID);
+        }
 
         setState(states.INIT);
     }
@@ -39,10 +57,39 @@ public class Main : Node2D
     }
     
     private void stateLogic(float delta) {
-        
+        switch(state) {
+            case states.START:
+                if(activeSong.GetPlaybackPosition() >= 1.50f && !introDone) { // Create a second Tween to move the text offscreen.
+                    SceneTreeTween tween = CreateTween();
+                    Label stageStart = (Label)GetNode("UI/StageStart");
+                    tween.TweenProperty(stageStart, "rect_position", new Vector2(-192, 104), 0.5f);
+                    tween.SetTrans(Tween.TransitionType.Linear);
+                    tween.SetEase(Tween.EaseType.In);
+                    introDone = true;
+                }
+                break;
+            
+            case states.RUN:
+                currentTilePos = background.WorldToMap(p.GlobalPosition);
+                if(lastTilePos != currentTilePos) {
+                    checkforItems(currentTilePos);
+                }
+                break;
+        }
     }
 
     private states getTransition(float delta) {
+        switch(state) {
+            case states.INIT:
+                return states.START;
+            
+            case states.START:
+                if(!activeSong.Playing) {
+                    return states.RUN;
+                }
+                break;
+        }
+
         return states.NULL;
     }
 
@@ -53,7 +100,8 @@ public class Main : Node2D
                 Random RNGesus = new Random();
 
                 // Set the maximum amount of enemies to be spawned
-                int maxEnemies = g.levelID + 3;
+                int maxEnemies = g.levelID + 3; // This will add an additional enemy depending on the level ID.
+                maxEnemies = Mathf.Clamp(maxEnemies, maxEnemies, 8); // Set the maximum amount of enemies to spawn in. In this case, is 8.
 
                 // Get the player's starting position and the distance of the new tile from the player.
                 Vector2 playerStartPos = new Vector2((float)Math.Floor(p.GlobalPosition.x / background.CellSize.x), (float)Math.Floor(p.GlobalPosition.y / background.CellSize.y));
@@ -73,7 +121,7 @@ public class Main : Node2D
                         breakables.SetCellv(tilePos, 0);
 
                         // Add the tile's position to activeBreakables. This is so we can calculate explosions later.
-                        activeBreakables.Add(tilePos);
+                        activeBreakables.Add(tilePos, breakables.GetCellv(tilePos));
 
                         // Let's call RNGesus once more for items.
                         bool setItem = RNGesus.Next(0, 128) < 32;
@@ -81,6 +129,7 @@ public class Main : Node2D
                         if(setItem) { // Items spawn at a rate of about 25%. If successful, choose from a pool of available items and place them on the items tilemap.
                             int itemID = RNGesus.Next(0, 3);
                             items.SetCellv(tilePos, itemID);
+                            activeItems.Add(tilePos, itemID);
                         }
                     }
 
@@ -90,7 +139,7 @@ public class Main : Node2D
                     // RNGesus shines once more for enemies!
                     bool setEnemy = RNGesus.Next(0, 512) < 32;
 
-                    if(setEnemy && blockCheck && activeEnemies.Count < maxEnemies) {
+                    if(setEnemy && blockCheck && activeEnemies.Count < maxEnemies) { // If the maximum amount of enemies hasn't been hit, spawn a new one.
                         PackedScene loader = (PackedScene)ResourceLoader.Load("res://scenes/enemy/Pollun.tscn");
                         Enemy result = (Enemy)loader.Instance();
                         Control enemyLayer = (Control)GetNode("Actor/Enemies");
@@ -99,6 +148,53 @@ public class Main : Node2D
                         activeEnemies.Add(result);
                     }
                 }
+
+                // Lets make a quick list of empty spots that enemies can start from while preventing them from spawning on top of the player.
+                List<Vector2> emptySpots = new List<Vector2>();
+
+                for(int i = 0; i < background.GetUsedCells().Count; i++) {
+                    Vector2 tilePos = (Vector2)background.GetUsedCells()[i];
+                    int tileID = (int)background.GetCellv(tilePos);
+
+                    bool blockCheck = breakables.GetCellv(tilePos) == -1;
+
+                    bool safeSpot = tileID == 2 
+                    && tilePos != playerStartPos 
+                    && tilePos != playerStartPos + Vector2.Up 
+                    && tilePos != playerStartPos + Vector2.Down 
+                    && tilePos != playerStartPos + Vector2.Left 
+                    && tilePos != playerStartPos + Vector2.Right
+                    && blockCheck;
+
+                    if(safeSpot) {
+                        emptySpots.Add(tilePos);
+                    }
+                }
+
+                // Finally, let's place the available enemies in the safe spots.
+                for(int i = 0; i < activeEnemies.Count; i++) {
+                    int whichSpot = RNGesus.Next(0, emptySpots.Count); // Pick an location based on it's index number.
+
+                    activeEnemies[i].GlobalPosition = background.MapToWorld(emptySpots[whichSpot]) + background.CellSize / 2; // Position the enemy.
+
+                    emptySpots.Remove(emptySpots[i]); // Remove the used location to prevent two enemies from sharing the same space.
+                }
+
+                // With blocks, items, and enemies in place, we can begin  the stage!
+                break;
+            
+            case states.START:
+                playMusic("Intro"); // Play the intro music.
+
+                SceneTreeTween tween = CreateTween(); // Create a Tween to display the Stage Start text.
+                Label stageStart = (Label)GetNode("UI/StageStart");
+                tween.TweenProperty(stageStart, "rect_position", new Vector2(64, 104), 0.5f);
+                tween.SetTrans(Tween.TransitionType.Linear);
+                tween.SetEase(Tween.EaseType.In);
+                break;
+            
+            case states.RUN:
+                playMusic("Stage"); // Play the stage music.
                 break;
         }
     }
@@ -108,12 +204,355 @@ public class Main : Node2D
     }
 
     private void setState(states newState) {
+        GD.Print("Game World has moved into state: ",newState);
+
         previousState = state;
         state = newState;
 
         exitState(previousState, newState);
 
         enterState(newState, previousState);
+    }
+
+    private void playMusic(string name) {
+        // Kill any current song that's playing. This is to prevent multiple songs from overlapping over one another.
+        activeSong = null;
+
+        Node songs = (Node)GetNode("AudioManager/Music");
+
+        for(int i = 0; i < songs.GetChildCount(); i++) { // Find the song to be played if it exists, set it as the active song, then play.
+            AudioStreamPlayer song = (AudioStreamPlayer)songs.GetChild(i);
+
+            if(song.Name == name) {
+                song.Play();
+                activeSong = song;
+            }
+        }
+    }
+
+    private void playSound(string name) {
+        Node sounds = (Node)GetNode("AudioManager/SoundEffects");
+
+        for(int i = 0; i < sounds.GetChildCount(); i++) {
+            AudioStreamPlayer sfx = (AudioStreamPlayer)sounds.GetChild(i);
+
+            if(sfx.Name == name) {
+                sfx.Play();
+            }
+        }
+    }
+
+    public Vector2 getDirection() { // Returns directional buttons held.
+        Vector2 dirHold = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
+
+        return dirHold;
+    }
+
+    public bool getButton() { // Returns if the bomb button is pressed or not.
+        bool buttonTap = Input.IsActionJustPressed("ui_accept");
+
+        return buttonTap;
+    }
+
+    public void setBomb() { // Spawn a bomb!
+        if(p.poisonState == 2) { // Player cannot drop bombs in this state.
+            return;
+        }
+
+        // First, get the player's tile position.
+        Vector2 playerTilePos = background.WorldToMap(p.GlobalPosition);
+
+        if(activeBombs.Count < g.maxBombs && !activeBombs.ContainsKey(playerTilePos)) { // Check to see if active bombs exceeds the maximum number of bombs allowed.
+            playSound("PlaceBomb");
+            PackedScene newBomb = (PackedScene)ResourceLoader.Load("res://scenes/objects/Bomb.tscn");
+            Bomb result = (Bomb)newBomb.Instance();
+
+            Control bombLayer = (Control)GetNode("Explosion");
+            bombLayer.AddChild(result);
+
+            result.GlobalPosition = background.MapToWorld(playerTilePos) + background.CellSize / 2;
+            result.bombStrength = g.bombStrength;
+
+            if(p.poisonState == 1) { // Bombs become pretty useless in this poisoned state.
+                result.bombStrength = 1;
+            }
+
+            result.tilePos = playerTilePos;
+            activeBombs.Add(playerTilePos, result);
+            GD.Print(result.Name," has been dropped.");
+        }
+    }
+
+    public void detonate(Bomb whichBomb) {
+        playSound("BombExplode"); // Play the explode sound effect.
+
+        Vector2 bombPos = whichBomb.tilePos; // Get the bomb's stats.
+        int bombStr = whichBomb.bombStrength;
+        
+        // Make stop flags for the 4 cardinal directions.
+        bool nStop = false;
+        bool sStop = false;
+        bool wStop = false;
+        bool eStop = false;
+
+        // Spawn the center of the explosion.
+        spawnExplosion("res://scenes/effects/ExplodeCenter.tscn", false, false, bombPos);
+
+        for(int i = 1; i < bombStr + 1; i++) {
+            Vector2 nCheck = bombPos + (Vector2.Up * i);
+            Vector2 sCheck = bombPos + (Vector2.Down * i);
+            Vector2 wCheck = bombPos + (Vector2.Left * i);
+            Vector2 eCheck = bombPos + (Vector2.Right * i);
+
+            activeBombs.Remove(bombPos); // Remove the bomb from the dictionary and delete the bomb itself.
+            whichBomb.QueueFree();
+            
+            // This part is going to get a bit long in the tooth, as we have to add checks for each cardinal direction that the bomb flames will travel.
+
+            switch(nStop) {
+                case bool v when v = !nStop && backgroundTiles.ContainsKey(nCheck) && backgroundTiles[nCheck] != 2:
+                    GD.Print("Background detected at ",nCheck," (NORTH)");
+                    nStop = true;
+                    break;
+                
+                case bool v when v = !nStop && activeBreakables.ContainsKey(nCheck):
+                    GD.Print("(",whichBomb.Name,") Breakable block detected at ",nCheck," (NORTH)");
+                    destroyBlock(nCheck);
+                    nStop = true;
+                    break;
+                
+                case bool v when v = !nStop && activeItems.ContainsKey(nCheck):
+                    GD.Print("(",whichBomb.Name,")Item detected at ",nCheck," (NORTH)");
+                    spawnItemBoom(nCheck);
+                    nStop = true;
+                    break;
+
+                case bool v when v = !nStop && activeBombs.ContainsKey(nCheck):
+                    GD.Print("(",whichBomb.Name,")Bomb detected at ",nCheck," (NORTH)");
+                    activeBombs[nCheck].bombLife = 1;
+                    nStop = true;
+                    break;
+                
+                case bool v when v = !nStop && activeExplosions.ContainsKey(nCheck):
+                    GD.Print("(",whichBomb.Name,")Active explosion object detected at ",nCheck," (NORTH)");
+                    nStop = true;
+                    break;
+            }
+
+            switch(sStop) {
+                case bool v when v = !sStop && backgroundTiles.ContainsKey(sCheck) && backgroundTiles[sCheck] != 2:
+                    GD.Print("(",whichBomb.Name,")Background detected at ",sCheck," (SOUTH)");
+                    sStop = true;
+                    break;
+                
+                case bool v when v = !sStop && activeBreakables.ContainsKey(sCheck):
+                    GD.Print("(",whichBomb.Name,")Breakable block detected at ",sCheck," (SOUTH)");
+                    destroyBlock(sCheck);
+                    sStop = true;
+                    break;
+                
+                case bool v when v = !sStop && activeItems.ContainsKey(sCheck):
+                    GD.Print("(",whichBomb.Name,")Item detected at ",sCheck," (SOUTH)");
+                    spawnItemBoom(sCheck);
+                    sStop = true;
+                    break;
+
+                case bool v when v = !sStop && activeBombs.ContainsKey(sCheck):
+                    GD.Print("(",whichBomb.Name,")Bomb detected at ",sCheck," (SOUTH)");
+                    activeBombs[sCheck].bombLife = 1;
+                    sStop = true;
+                    break;
+                
+                case bool v when v = !nStop && activeExplosions.ContainsKey(sCheck):
+                    GD.Print("(",whichBomb.Name,")Active explosion object detected at ",sCheck," (SOUTH)");
+                    sStop = true;
+                    break;
+            }
+
+            switch(wStop) {
+                case bool v when v = !wStop && backgroundTiles.ContainsKey(wCheck) && backgroundTiles[wCheck] != 2:
+                    GD.Print("(",whichBomb.Name,")Background detected at ",wCheck," (WEST)");
+                    wStop = true;
+                    break;
+                
+                case bool v when v = !wStop && activeBreakables.ContainsKey(wCheck):
+                    GD.Print("(",whichBomb.Name,")Breakable block detected at ",wCheck," (WEST)");
+                    destroyBlock(wCheck);
+                    wStop = true;
+                    break;
+                
+                case bool v when v = !wStop && activeItems.ContainsKey(wCheck):
+                    GD.Print("(",whichBomb.Name,")Item detected at ",wCheck," (WEST)");
+                    spawnItemBoom(wCheck);
+                    wStop = true;
+                    break;
+
+                case bool v when v = !wStop && activeBombs.ContainsKey(wCheck):
+                    GD.Print("(",whichBomb.Name,")Bomb detected at ",wCheck," (WEST)");
+                    activeBombs[wCheck].bombLife = 1;
+                    wStop = true;
+                    break;
+                
+                case bool v when v = !wStop && activeExplosions.ContainsKey(wCheck):
+                    GD.Print("(",whichBomb.Name,")Active explosion object detected at ",wCheck," (WEST)");
+                    wStop = true;
+                    break;
+            }
+
+            switch(eStop) {
+                case bool v when v = !eStop && backgroundTiles.ContainsKey(eCheck) && backgroundTiles[eCheck] != 2:
+                    GD.Print("(",whichBomb.Name,")Background detected at ",eCheck," (EAST)");
+                    eStop = true;
+                    break;
+                
+                case bool v when v = !eStop && activeBreakables.ContainsKey(eCheck):
+                    GD.Print("(",whichBomb.Name,")Breakable block detected at ",eCheck," (EAST)");
+                    destroyBlock(eCheck);
+                    eStop = true;
+                    break;
+                
+                case bool v when v = !eStop && activeItems.ContainsKey(eCheck):
+                    GD.Print("(",whichBomb.Name,")Item detected at ",eCheck," (EAST)");
+                    spawnItemBoom(eCheck);
+                    eStop = true;
+                    break;
+
+                case bool v when v = !eStop && activeBombs.ContainsKey(eCheck):
+                    GD.Print("(",whichBomb.Name,")Bomb detected at ",eCheck," (EAST)");
+                    activeBombs[eCheck].bombLife = 1;
+                    eStop = true;
+                    break;
+                
+                case bool v when v = !eStop && activeExplosions.ContainsKey(eCheck):
+                    GD.Print("(",whichBomb.Name,")Active explosion object detected at ",eCheck," (EAST)");
+                    eStop = true;
+                    break;
+            }
+
+            if(!nStop) {
+                switch(i) {
+                    case int v when i < bombStr:
+                        spawnExplosion("res://scenes/effects/ExplodeVertical.tscn", false, false, nCheck);
+                        break;
+                    
+                    case int v when i == bombStr:
+                        spawnExplosion("res://scenes/effects/ExplodeVerticalTip.tscn", false, false, nCheck);
+                        break;
+                }
+            }
+
+            if(!sStop) {
+                switch(i) {
+                    case int v when i < bombStr:
+                        spawnExplosion("res://scenes/effects/ExplodeVertical.tscn", true, false, sCheck);
+                        break;
+                    
+                    case int v when i == bombStr:
+                        spawnExplosion("res://scenes/effects/ExplodeVerticalTip.tscn", true, false, sCheck);
+                        break;
+                }
+            }
+
+            if(!wStop) {
+                switch(i) {
+                    case int v when i < bombStr:
+                        spawnExplosion("res://scenes/effects/ExplodeHorizontal.tscn", false, false, wCheck);
+                        break;
+                    
+                    case int v when i == bombStr:
+                        spawnExplosion("res://scenes/effects/ExplodeHorizontalTip.tscn", false, false, wCheck);
+                        break;
+                }
+            }
+
+            if(!eStop) {
+                switch(i) {
+                    case int v when i < bombStr:
+                        spawnExplosion("res://scenes/effects/ExplodeHorizontal.tscn", false, true, eCheck);
+                        break;
+                    
+                    case int v when i == bombStr:
+                        spawnExplosion("res://scenes/effects/ExplodeHorizontalTip.tscn", false, true, eCheck);
+                        break;
+                }
+            }
+        }
+    }
+
+    private void spawnExplosion(string path, bool vFlip, bool hFlip, Vector2 pos) {
+        if(activeExplosions.ContainsKey(pos)) {
+            return;
+        }
+        
+        Control explodeLayer = (Control)GetNode("Explosion");
+        PackedScene newBoom = (PackedScene)ResourceLoader.Load(path);
+        Explosion result = (Explosion)newBoom.Instance();
+
+        explodeLayer.AddChild(result);
+        result.GlobalPosition = background.MapToWorld(pos) + background.CellSize / 2;
+        result.s.FlipV = vFlip;
+        result.s.FlipH = hFlip;
+        result.tilePos = pos;
+        
+        activeExplosions.Add(pos, result);
+    }
+
+    private void spawnItemBoom(Vector2 pos) {
+        Control explodeLayer = (Control)GetNode("Explosion");
+        PackedScene newBoom = (PackedScene)ResourceLoader.Load("res://scenes/effects/ItemExplode.tscn");
+        ItemExplode result = (ItemExplode)newBoom.Instance();
+
+        explodeLayer.AddChild(result);
+        result.GlobalPosition = background.MapToWorld(pos) + background.CellSize / 2;
+        result.tilePos = pos;
+    }
+
+    private void destroyBlock(Vector2 pos) {
+        activeBreakables.Remove(pos);
+        breakables.SetCellv(pos, -1);
+
+        PackedScene newEffect = (PackedScene)ResourceLoader.Load("res://scenes/effects/BlockExplode.tscn");
+        BlockExplode deadBlock = (BlockExplode)newEffect.Instance();
+        Control breakLayer = (Control)GetNode("Breakable");
+        breakLayer.AddChild(deadBlock);
+        deadBlock.GlobalPosition = background.MapToWorld(pos) + background.CellSize / 2;
+    }
+
+    public void destoryItem(Vector2 pos) {
+        activeItems.Remove(pos);
+        items.SetCellv(pos, -1);
+    }
+
+    private void checkforItems(Vector2 pos) {
+        int tileID = (int)items.GetCellv(pos);
+
+        if(tileID != -1) {
+            playSound("ItemGet");
+
+            switch(tileID) {
+                case 0:
+                    if(g.bombStrength < 6) {
+                        g.bombStrength++;
+                    }
+                    break;
+                
+                case 1:
+                    if(g.maxBombs < 4) {
+                        g.maxBombs++;
+                    }
+                    break;
+                
+                case 2:
+                    Random RNGesus = new Random();
+
+                    p.poisonState = RNGesus.Next(1, 4);
+                    p.poisonTicker = RNGesus.Next(400, 601);
+                    break;
+            }
+
+            items.SetCellv(pos, -1);
+            activeItems.Remove(pos);
+        }
     }
 }
 

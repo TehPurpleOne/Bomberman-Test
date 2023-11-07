@@ -11,5 +11,5 @@ dest_files=[ "res://.import/Super Bomberman - Stage Start.ogg-45339288c24fac55b2
 
 [params]
 
-loop=true
+loop=false
 loop_offset=0

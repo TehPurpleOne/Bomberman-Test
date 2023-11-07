@@ -16,3 +16,12 @@ C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bombe
 C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.csproj.CoreCompileInputs.cache
 C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.dll
 C:\Users\GALC\Documents\stuff\projects\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.pdb
+D:\Bomberman-Test\.mono\temp\bin\Debug\Bomberman test.dll
+D:\Bomberman-Test\.mono\temp\bin\Debug\Bomberman test.pdb
+D:\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.csproj.AssemblyReference.cache
+D:\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.GeneratedMSBuildEditorConfig.editorconfig
+D:\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.AssemblyInfoInputs.cache
+D:\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.AssemblyInfo.cs
+D:\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.csproj.CoreCompileInputs.cache
+D:\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.dll
+D:\Bomberman-Test\.mono\temp\obj\Debug\Bomberman test.pdb

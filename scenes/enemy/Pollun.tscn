@@ -7,7 +7,7 @@
 extents = Vector2( 7, 7 )
 
 [sub_resource type="Animation" id=2]
-resource_name = "FADE"
+resource_name = "DEAD"
 length = 0.6
 tracks/0/type = "value"
 tracks/0/path = NodePath("Sprite:frame")
@@ -63,8 +63,9 @@ shape = SubResource( 1 )
 [node name="Sprite" type="Sprite" parent="."]
 texture = ExtResource( 1 )
 hframes = 11
+frame = 5
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
-anims/FADE = SubResource( 2 )
+anims/DEAD = SubResource( 2 )
 anims/HIT = SubResource( 3 )
 anims/MOVE = SubResource( 4 )

@@ -1,29 +1,28 @@
 [gd_scene load_steps=5 format=2]
 
-[ext_resource path="res://assets/sprites/basicblock.png" type="Texture" id=1]
-[ext_resource path="res://scripts/effects/BlockExplode.cs" type="Script" id=2]
+[ext_resource path="res://assets/sprites/itemboom.png" type="Texture" id=1]
+[ext_resource path="res://scripts/effects/ItemExplode.cs" type="Script" id=2]
 
 [sub_resource type="Animation" id=1]
 resource_name = "BOOM"
-length = 0.35
-step = 0.05
+length = 0.6
 tracks/0/type = "value"
-tracks/0/path = NodePath(".:frame")
+tracks/0/path = NodePath("Sprite:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
 tracks/0/keys = {
-"times": PoolRealArray( 0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3 ),
-"transitions": PoolRealArray( 1, 1, 1, 1, 1, 1, 1 ),
+"times": PoolRealArray( 0, 0.1, 0.2, 0.3, 0.4, 0.5 ),
+"transitions": PoolRealArray( 1, 1, 1, 1, 1, 1 ),
 "update": 1,
-"values": [ 0, 1, 2, 3, 4, 5, 6 ]
+"values": [ 0, 1, 2, 3, 4, 5 ]
 }
 
 [sub_resource type="Animation" id=2]
 length = 0.001
 tracks/0/type = "value"
-tracks/0/path = NodePath(".:frame")
+tracks/0/path = NodePath("Sprite:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
@@ -35,16 +34,16 @@ tracks/0/keys = {
 "values": [ 1 ]
 }
 
-[node name="BlockExplode" type="KinematicBody2D"]
+[node name="ItemExplode" type="KinematicBody2D"]
 script = ExtResource( 2 )
 
 [node name="Sprite" type="Sprite" parent="."]
+position = Vector2( 0, -6 )
 texture = ExtResource( 1 )
-hframes = 7
+hframes = 6
 frame = 1
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
-root_node = NodePath("../Sprite")
 anims/BOOM = SubResource( 1 )
 anims/RESET = SubResource( 2 )
 

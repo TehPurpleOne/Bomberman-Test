@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://assets/sprites/explosion.png" type="Texture" id=1]
+[ext_resource path="res://scripts/effects/Explosion.cs" type="Script" id=2]
 
 [sub_resource type="RectangleShape2D" id=1]
 extents = Vector2( 8, 8 )
@@ -38,6 +39,7 @@ tracks/0/keys = {
 }
 
 [node name="ExplodeVertical" type="KinematicBody2D"]
+script = ExtResource( 2 )
 
 [node name="Area2D" type="Area2D" parent="."]
 collision_layer = 16
@@ -55,3 +57,5 @@ frame = 2
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 anims/BOOM = SubResource( 2 )
 anims/RESET = SubResource( 3 )
+
+[connection signal="animation_finished" from="AnimationPlayer" to="." method="onAnimDone"]
