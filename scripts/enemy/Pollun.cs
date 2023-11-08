@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 
 public class Pollun : Enemy {
+    private Vector2 direction = Vector2.Zero;
+
     public override void _Ready() {
         w = (Main)GetTree().GetNodesInGroup("world")[0];
         anim = (AnimationPlayer)GetNode("AnimationPlayer");
@@ -24,6 +26,10 @@ public class Pollun : Enemy {
         switch(state) {
             case states.MOVE:
                 // Move Pollun.
+                if(velocity != direction * speed) { // Keep Pollun moving if something were to stop him before reaching his target position.
+                    velocity = direction* speed;
+                }
+
                 velocity = MoveAndSlide(velocity, Vector2.Zero);
                 break;
         }
@@ -100,6 +106,7 @@ public class Pollun : Enemy {
                     if(w.background.GetCellv(tilePos) == 2 && !w.activeBreakables.ContainsKey(tilePos) && !w.activeBombs.ContainsKey(tilePos) && previousDir != Vector2.Zero) {
                         // Staying the course was successful!
                         targetPos = GlobalPosition + (previousDir * w.background.CellSize);
+                        direction = previousDir;
                         velocity = previousDir * speed;
                     }
 
@@ -119,6 +126,7 @@ public class Pollun : Enemy {
 
                         if(w.background.GetCellv(tilePos) == 2 && !w.activeBreakables.ContainsKey(tilePos) && !w.activeBombs.ContainsKey(tilePos)) {
                             // Pollun can move in the desired direction!
+                            direction = desiredDir;
                             targetPos = GlobalPosition + (desiredDir * w.background.CellSize);
                             velocity = desiredDir * speed;
                             break;
