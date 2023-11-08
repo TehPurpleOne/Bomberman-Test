@@ -158,10 +158,7 @@ public class Main : Node2D
                     // Now we're going to place enemies about the stage.
                     bool blockCheck = breakables.GetCellv(tilePos) == -1 && background.GetCellv(tilePos) == 2;
 
-                    // RNGesus shines once more for enemies!
-                    bool setEnemy = RNGesus.Next(0, 512) < 32;
-
-                    if(setEnemy && blockCheck && activeEnemies.Count < maxEnemies) { // If the maximum amount of enemies hasn't been hit, spawn a new one.
+                    if(blockCheck && activeEnemies.Count < maxEnemies) { // If the maximum amount of enemies hasn't been hit, spawn a new one.
                         PackedScene loader = (PackedScene)ResourceLoader.Load("res://scenes/enemy/Pollun.tscn");
                         Enemy result = (Enemy)loader.Instance();
                         Control enemyLayer = (Control)GetNode("Actor/Enemies");
@@ -579,7 +576,15 @@ public class Main : Node2D
     }
 
     public void restartStage(int x) {
+        
+        if(x <= 0) { // The player died. Prevent users from decrementing the level ID and reset bomb stats.
+            g.maxBombs = 1;
+            g.bombStrength = 2;
+            x = 0;
+        }
+
         g.levelID += x; // Add x to levelID to increment or decrement level ID.
+
         GetTree().ReloadCurrentScene();
     }
 }
